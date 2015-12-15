@@ -54,7 +54,8 @@ def main():
         n_ip = socket.gethostbyname(sys.argv[i])
         neighbor_id = str(n_ip) + ":" + sys.argv[i + 1]
         routing_table[neighbor_id] = {} #initialize empty dictionary
-        routing_table[neighbor_id]['cost']= float(sys.argv[i + 2])
+
+        routing_table[neighbor_id]['cost'] = float(sys.argv[i + 2])
         routing_table[neighbor_id]['next'] = neighbor_id
         adjacent_links[neighbor_id] = float(sys.argv[i + 2])
         neighbors[neighbor_id] = {} # initialize a routing table here
@@ -98,18 +99,18 @@ def prompt():
     sys.stdout.flush()
 
 def update_neighbor(): #send this node's routing table to all neighbors
-    for neighbor in neighbors: # string ID's in format "<ip>:<port>"
+    for neighbor in copy.deepcopy(neighbors): # string ID's in format "<ip>:<port>"
         temp = neighbor.split(':')
         addr = (temp[0], int(temp[1]))
 
         send_dict = {'type': 'update', 'routing_table': {}, }
-
-        for node in routing_table: #our own routing table
-            send_dict['routing_table'][node] = copy.deepcopy(routing_table[node])
+        rt_copy = copy.deepcopy(routing_table)
+        for node in rt_copy: #our own routing table
+            send_dict['routing_table'][node] = rt_copy
             #using copy.deepcopy to keep this code thread-safe
 
             #-- POISONED REVERSE --#
-            if node != neighbor and routing_table[node]['next'] == neighbor:
+            if node != neighbor and rt_copy[node]['next'] == neighbor:
                 send_dict['routing_table'][node]['cost'] = INFINITY
 
         recvSock.sendto(json.dumps(send_dict), addr)
@@ -122,7 +123,6 @@ def timer_update(timeout_interval):
 
 # check to see if nodes have "timed out"
 def node_checker(timeout_interval):
-    print "checkin node, ",
     for neighbor in copy.deepcopy(neighbors):
         if neighbor in active_hist:
             t_threshold = (3 * timeout_interval)
@@ -192,21 +192,28 @@ def msg_handler(rcv_data, tuple_addr):
 
         # update our existing neighbor table for this address
         if addr in neighbors:
+        #    print "update from neighbor: " + str(addr)
             neighbors[addr] = rcv_data['routing_table']
 
-        if routing_table.has_key(addr):
+        if addr in routing_table:
             # known node comes online, not necessarily neighbor
             if routing_table[addr]['cost'] == INFINITY:
                 routing_table[addr]['cost'] = adjacent_links[addr]
                 routing_table[addr]['next'] = addr
-            #    neighbors[addr] = {} #clear out old entry
                 table_changed = True
+                # online node was a former neighbor
+                if addr in adjacent_links:
+                    neighbors[addr] = rcv_data['routing_table']
 
         # node in network, not necessarily an immediate neighbor
         # up to this point unknown to us
+        #print "my table: " + str(routing_table)
+        #print "received table:" + str(rcv_data['routing_table'])
+
+        # they know us but we don't know them yet
         elif rcv_data['routing_table'].has_key(self_id):
-            routing_table[addr] = {}
-            routing_table[addr]['cost'] = rcv_data['routing_table'][self_id]['cost']
+            routing_table[addr] = {} #new entry
+            routing_table[addr]['cost'] = rcv_data['routing_table'][self_id]['cost'] #ERROR HERE
             routing_table[addr]['next'] = addr
             table_changed = True
 
@@ -215,7 +222,7 @@ def msg_handler(rcv_data, tuple_addr):
                 neighbors[addr] = rcv_data['routing_table']
                 adjacent_links[addr] = rcv_data['routing_table'][self_id]['cost']
         else:
-                print "SOO BAD should not happen. THIS IS UNRECOVERABLE"
+                print "Should not happen. Potential error in usage."
                 sys.exit()
 
         for node in rcv_data['routing_table']:
@@ -244,7 +251,6 @@ def msg_handler(rcv_data, tuple_addr):
                             table_changed = True
 
             if table_changed:
-            #    print "DEBUG: [%s: Table Changed]" % self_id
                 update_neighbor()
                 table_changed = False
 
