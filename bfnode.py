@@ -78,6 +78,9 @@ def main():
 
     #for thing in sorted(routing_table.keys()): #not necessarily sorted
     #    print thing
+    print "\nHERE ARE NEIGHBORS"
+    for n in neighbors:
+        print n
 
     prompt()
 
@@ -97,10 +100,12 @@ def main():
             if sock == recvSock:
                 data, addr = recvSock.recvfrom(RECV_BUFFER) #datagram socket
                 if data:
+        #            print "\nyes data"
                     msg = json.loads(data)
+                    #print "json'd msg " + str(msg)
                     msg_handler(msg, addr)
                 else:
-                    print "NO DATA, this connection broke."
+                    print "NO DATA, this connection broke. dang."
 
             # user entered COMMAND on console
             else:
@@ -124,18 +129,18 @@ def update_neighbor(): #send this node's routing table to all neighbors
         temp = neighbor.split(':')
         addr = (temp[0], int(temp[1]))
 
-        send_dict = {'type': 'update', 'routing_table': {} }
+        send_dict = {'type': 'update', 'routing_table': {}, }
 
         for node in routing_table: #our own routing table
             send_dict['routing_table'][node] = copy.deepcopy(routing_table[node])
             #using copy.deepcopy to keep this code thread-safe
 
+            #-- POISONED REVERSE --#
             if node != neighbor and routing_table[node]['next'] == neighbor:
                 send_dict['routing_table'][node]['cost'] = INFINITY
-
-    #    print "sending to: " + str(addr) + ", ",
+    #    print "DICK" + str(send_dict)
+    #    print "FUCK" + json.dumps(send_dict)
         recvSock.sendto(json.dumps(send_dict), addr)
-    #end of loop
 
 def timer_update(timeout_interval):
     update_neighbor()
@@ -163,17 +168,16 @@ def node_checker(timeout_interval):
                         routing_table[node]['cost'] = INFINITY
                         routing_table[node]['next'] = "n/a"
 
-
-def tell_neighbor(sock, send_dict):
-    for neighbor in neighbors:
-        temp = neighbor.split(":")
-        sock.sendto(json.dumps(send_dict), (temp[0], int(temp[1])))
-
 def cmd_handler(args): #for command line input
 
     if args[0] == "LINKDOWN":
         if len(args) == 3:
+        #    try:
+        #        ip = socket.gethostbyname(args[1])
+        #        linkdown(ip, args[2])
+        #    except:
             linkdown(args[1], args[2])
+
         else:
             print "[ERROR] incorrect number of args for 'LINKDOWN' command."
 
@@ -189,17 +193,22 @@ def cmd_handler(args): #for command line input
     elif args[0] == "CLOSE":
         close()
 
+    elif args[0] == "SWANK":
+        keypair = self_id + "," + self_id
+        send_dict = { 'type': 'swank', 'chill': keypair }
+        tell_neighbor(recvSock, send_dict)
 
 def msg_handler(rcv_data, tuple_addr):
     global self_id
     table_changed = False
     t_now = int(time.time())
     addr = str(tuple_addr[0]) + ":" + str(tuple_addr[1])
-    print "received message from <%s>" % addr
+#    print "received message from <%s>" % addr
+#    print "MESSAGE TYPE, PLEASE: " + rcv_data['type']
 
     # --------------------- Received table update ---------------------------- #
-    if rcv_data['type'] == "update":
-        print "DEBUG: [received UPDATE message from %s]" % str(tuple_addr)
+    if rcv_data['type'] == 'update':
+    #    print "DEBUG: [received UPDATE message from %s]" % str(tuple_addr)
         active_hist[addr] = t_now
 
         neighbors[addr] = rcv_data['routing_table']
@@ -212,7 +221,6 @@ def msg_handler(rcv_data, tuple_addr):
             #    neighbors[addr] = {} #clear out old entry
                 table_changed = True
 
-
         elif rcv_data['routing_table'].has_key(self_id):
             print "YES"
             routing_table[addr] = {}
@@ -224,7 +232,6 @@ def msg_handler(rcv_data, tuple_addr):
                 sys.exit()
 
         for node in rcv_data['routing_table']:
-            #print addr + "'s new node " + node
             if node != self_id:
 
                 # --- discover a new node that entered network ---
@@ -255,48 +262,69 @@ def msg_handler(rcv_data, tuple_addr):
     #    else:
         #    print "DEBUG: %s is not in RT?" % str(addr)
 
-    # ----- RECEIVED LINKUP MESSAGE ------- #
-    if rcv_data['type'] == "linkup":
+    # ------------ RECEIVED LINKUP MESSAGE -------------- #
+    elif rcv_data['type'] == 'linkup':
+
         print "DEBUG: [received LINKUP message from %s]" % str(tuple_addr)
         link_known = False
         active_hist[addr] = t_now
         pair = rcv_data['pair']
-        tup1 = (pair[0],pair[1])
-        tup2 = (pair[1],pair[0])
-        if (tup1 in dead_links):
-            dead_links.remove(tup1)
+        temp = pair.split(',')
+        alt_pair = str(temp[1]) + "," + str(temp[0])
+
+        if pair in dead_links:
+            dead_links.remove(pair)
             link_known = True
-        elif (tup2 in dead_links):
-            dead_links.remove(tup2)
+        elif alt_pair in dead_links:
+            dead_links.remove(alt_pair)
             link_known = True
 
         if link_known:
-            if pair[0] == addr and pair[1] == self_id:
-                old_links.remove(addr)
+            print "removed from dead_links :)"
+            if temp[0] == addr and temp[1] == self_id: # someone sent to ME
+            #    del old_links[addr]
                 routing_table[addr]['cost'] = old_links[addr]
                 routing_table[addr]['next'] = addr
                 neighbors[addr] = {} # reinitialize their table
-
+                print "ok passing on linkup"
+                del old_links[addr]
                 send_dict = { 'type': 'linkup', 'pair': pair, }
                 tell_neighbor(recvSock, send_dict)
         else:
             update_neighbor()
 
-    # ----- RECEIVED LINKDOWN MESSAGE ------- #
-    if rcv_data['type'] == 'linkdown':
+    # ------------ RECEIVED SWANK MESSAGE ----------------- #
+
+    elif rcv_data['type'] == 'swank':
+        print "SWAAAANKKK\n"
+        print rcv_data['chill']
+
+    # ------------ RECEIVED LINKDOWN MESSAGE -------------- #
+
+    elif rcv_data['type'] == 'linkdown':
         print "DEBUG: [received LINKDOWN message from %s]" % str(tuple_addr)
         active_hist[addr] = t_now
         link_known = False
         pair = rcv_data['pair']
+        print "link taken down: " + str(pair)
+
         if pair in dead_links:
-            send_update()
+            print "updating neighbor, nothing new."
+            update_neighbor() # nothing new
         else:
             dead_links.append(pair)
-            if pair[0] == addr and pair[1] == self_id:
-                old_links.append(addr)
+            temp = pair.split(',')
+            if temp[0] == addr and temp[1] == self_id: #relevant to this node
+                print "LINKDOWN RECEIPT WORKING"
+                old_links[addr] = adjacent_links[addr]
                 routing_table[addr]['cost'] = INFINITY
                 routing_table[addr]['next'] = "n/a"
-                del neighbors[addr] # goodbye
+                if addr in neighbors:
+                    del neighbors[addr] # goodbye#######
+            #else:
+                #linkdown pair not one of my adjacent links
+                #no need to take immediate action
+                #will update routing table after ROUTE UPDATES
 
             for node in routing_table:
                 if node in neighbors:
@@ -307,9 +335,13 @@ def msg_handler(rcv_data, tuple_addr):
                     routing_table[node]['cost'] = INFINITY
                     routing_table[node]['next'] = "n/a"
 
-        #stuff
+            send_dict = { 'type': 'linkdown', 'pair': pair, }
+
+            tell_neighbor(recvSock, send_dict)
+
     # ------------ RECEIVED CLOSE MESSAGE --------------------- #
-    if rcv_data['type'] == 'close':
+    elif rcv_data['type'] == 'close': #this works fine for some reason
+
         print "DEBUG: [received CLOSE message from %s]" % str(tuple_addr)
         active_hist[addr] = t_now
         close_node = rcv_data['target']
@@ -329,12 +361,12 @@ def msg_handler(rcv_data, tuple_addr):
                 routing_table[node]['cost'] = INFINITY
                 routing_table[node]['next'] = "n/a"
 
-        send_dict = { 'type': 'close', 'target': close_node }
+        send_dict = { 'type': 'close', 'target': close_node, }
         tell_neighbor(recvSock, send_dict)
 
 def close_handler(signum, frame):
     print "signal " + str(signum) + " called, closing down."
-    sys.exit()
+    close()
 
 # ---------------------------------------------------------------
 #                  - METHODS FOR USER COMMANDS -
@@ -342,12 +374,17 @@ def close_handler(signum, frame):
 
 def linkdown(ip_addr, port):
     global self_id
-    node_id = (str(ip_addr), str(port))
+    node_id = str(ip_addr) + ":" + str(port)
+    print "linkdown: " + node_id + '\n'
+    for n in neighbors: print n
     if node_id not in neighbors:
-        print "[ERROR] This node is not a neighbor."
+        print "[ERROR] %s is not a neighbor." % node_id
     else:
-        old_links[node_id] = adjacent_links[node_id]
-        del neighbors[node_id] # not ur neighbor anymore
+        cost = adjacent_links[node_id]
+        print "cost of offline link: " + str(cost)
+        old_links[node_id] = cost #this is not working
+        print "in dict: " + str(old_links[node_id])
+    #    del neighbors[node_id] # not ur neighbor anymore
 
         #reinitialize this node's routing table
         for node in routing_table:
@@ -364,6 +401,22 @@ def linkdown(ip_addr, port):
                     routing_table[node]['next'] = "n/a"
                     #remove node_id from our knowledge of its knowledge
 
+        pair_key = str(self_id) + "," + str(node_id)
+    #    print "pair key is " + str(pair_key)
+
+        dead_links.append(pair_key)
+    #    print "here we go"
+
+        keypair = str(self_id) + "," + str(self_id)
+
+        send_dict1 = { 'type': 'linkdown', 'pair': pair_key }
+        tell_neighbor(recvSock, send_dict1)
+
+        print "removing %s." % node_id
+        del neighbors[node_id] #NOW, AFTER, REMOVE NEIGHBOR
+        print "NEW NEIGHBORS:"
+        for n in neighbors:
+            print n
 
 def linkup(ip_addr, port):
     global self_id
@@ -374,36 +427,53 @@ def linkup(ip_addr, port):
     else:
         routing_table[node_id]['cost'] = old_links[node_id]
         del old_links[node_id]
-
         routing_table[node_id]['next'] = node_id
         neighbors[node_id] = {} # reinitialize routing table for this node
                                 # and wait for it to report to us
 
-        if (node_id, self_id)  in dead_links:
-            dead_links.remove((node_id, self_id))
-            #linkdowns.remove(node_id, self_node)
-        elif (self_id, node_id) in dead_links:
-            dead_links.remove((self_id, node_id))
+        pair_one = self_id + "," + node_id
+        pair_two = node_id + "," + self_id
 
-        send_dict = { 'type': 'linkup', 'pair': (self_id, node_id) }
-        tell_neighbor(recvSock, send_dict)
+        if (pair_one)  in dead_links:
+            dead_links.remove(pair_one)
+        elif (pair_two) in dead_links:
+            dead_links.remove(pair_two)
+        print "about to send linkup"
 
-    # if ip_addr, port in neighbors (regardless of infinite cost or not)
-        #change cost from infinity to previous value, use dict here to remember old values.
-    #else
-        #create new neighbor, add this address to neighbor list with cost
+        send_dict2 = { 'type': 'linkup', 'pair': pair_one, }
+
+        tell_neighbor(recvSock, send_dict2)
 
 def show_rt(routin_table):
     print "SIZE " + str(len(routin_table))
     t_log = time.strftime('%H:%M:%S', time.localtime(time.time()))
-    print str(t_log) + " Distance vector list is:"
+    print str(t_log) + " [%s] Distance vector list is:" % self_id
     for node in routing_table:
         link = routing_table[node]['next']
         print "Destination = " + str(node) + ", Cost = " + str(routing_table[node]['cost']) + ", Link = " + '(' + link + ')'
 
+    print "NEIGHBORS: "
+    for n in neighbors:
+        print n
+    print "---"
+    print "DOWN NEIGHBORS"
+    for d in old_links:
+        print d
+
+
+def tell_neighbor(sock, payload):
+    print "\nSENDING THIS TYPE: " + str(payload['type'])
+#    print str(payload)
+    package = json.dumps(payload)
+    #print "json'd send: " + str(package)
+
+    for neighbor in neighbors:
+        temp = neighbor.split(":")
+        sock.sendto(package, (temp[0], int(temp[1])))
+
 def close():
     global self_id
-    send_dict = {'type': 'close', 'target': self_id }
+    send_dict = { 'type': 'close', 'target': self_id, }
     tell_neighbor(recvSock, send_dict)
     sys.exit()
 
