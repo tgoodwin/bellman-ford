@@ -211,22 +211,30 @@ def msg_handler(rcv_data, tuple_addr):
     #    print "DEBUG: [received UPDATE message from %s]" % str(tuple_addr)
         active_hist[addr] = t_now
 
-        neighbors[addr] = rcv_data['routing_table']
+        # update our existing neighbor table for this address
+        if addr in neighbors:
+            neighbors[addr] = rcv_data['routing_table']
 
         if routing_table.has_key(addr):
+            # came back to life?
             if routing_table[addr]['cost'] == INFINITY:
-                # initialize the entry for addr
                 routing_table[addr]['cost'] = adjacent_links[addr]
                 routing_table[addr]['next'] = addr
             #    neighbors[addr] = {} #clear out old entry
                 table_changed = True
 
+        #they know of us, but not necessarily an immediate neighbor
         elif rcv_data['routing_table'].has_key(self_id):
             print "YES"
             routing_table[addr] = {}
             routing_table[addr]['cost'] = rcv_data['routing_table'][self_id]['cost']
             routing_table[addr]['next'] = addr
             table_changed = True
+
+            # new node enters the network as our immediate neighbor
+            if rcv_data['routing_table'][self_id]['next'] == self_id:
+                neighbors[addr] = rcv_data['routing_table']
+                adjacent_links[addr] = rcv_data['routing_table'][self_id]['cost']
         else:
                 print "SOO BAD should not happen. THIS IS UNRECOVERABLE"
                 sys.exit()
@@ -235,6 +243,7 @@ def msg_handler(rcv_data, tuple_addr):
             if node != self_id:
 
                 # --- discover a new node that entered network ---
+                # --- regardless of if this node has contacted us directly ---
                 if node not in routing_table:
                     print node + " was NOT in routing table before"
                     routing_table[node] = {
@@ -246,6 +255,8 @@ def msg_handler(rcv_data, tuple_addr):
                 # --- BELLMAN FORD ALGORITHM ---
                 for dest in routing_table:
                     old_cost = routing_table[dest]['cost']
+                    ##LOOKOUT!!!!
+                    #if addr in neighbors: if dest in neighbors[addr]:???
                     if dest in neighbors[addr]: #if immediate to them
                         new_cost = routing_table[addr]['cost'] + neighbors[addr][dest]['cost']
                         #this might not work
@@ -450,7 +461,7 @@ def show_rt(routin_table):
     print str(t_log) + " [%s] Distance vector list is:" % self_id
     for node in routing_table:
         link = routing_table[node]['next']
-        print "Destination = " + str(node) + ", Cost = " + str(routing_table[node]['cost']) + ", Link = " + '(' + link + ')'
+        print "Destination = (" + str(node) + "), Cost = " + str(routing_table[node]['cost']) + ", Link = " + '(' + link + ')'
 
     print "NEIGHBORS: "
     for n in neighbors:
