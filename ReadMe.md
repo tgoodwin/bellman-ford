@@ -7,7 +7,7 @@ Instances of bfclient.py communicate with each other over UDP, each using a data
 ##1. Description of data formats, internal data structures used by each node
 
   Nodes are uniquely identified by a <ip_addr, port> tuple. This program represents these node identifiers, named 'node_id', as a string with the following format:
-  ```<ip_adress>:<port>```
+  `<ip_adress>:<port>`
 
   'self_id' is a node_id string with the host and port the bfclient instance is running on.
 
