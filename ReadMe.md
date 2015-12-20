@@ -1,9 +1,7 @@
-#Bellman-Ford
+#Distributed Bellman-Ford
 #####Timothy Goodwin,  December 2015
 
-######A distributed, dynamic network routing algorithm implemented here in Python for truly scalable optimal-path computations. Instances of bfclient.py communicate with each other over UDP, each using a single datagram socket.
-
->When constructing the network topology via command line input, ensure that the IP address input for any given node is the same as what would be retuned by `socket.gethostbyname(socket.gethostname())` on that node's machine. This function call can be system dependent. See point 4(a) below for details.
+######A distributed network routing algorithm implemented here in Python for optimal path calculations. Fully responsive to dynamic network configurations. Embraces the essence of scalability. Instances of bfclient.py communicate with each other over UDP, each using a single datagram socket.
 
 ###1. Description of data formats, internal data structures used by each node
 
