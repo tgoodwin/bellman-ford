@@ -58,7 +58,7 @@ _node timer thread_
 ###4. Peculiarities in this implementation with respect to the assignment:
 
 **_[IMPORTANT]_**
-Since this program does not take a host ip address on the command line, I use
+>Since this program does not take a host ip address on the command line, I use
 `host = socket.gethostbyname(socket.gethostname())`
 to store an ip address for the host. This is what ultimately determines the node's `self_id` string.
 This program works under the assumption that the above function call returns the same IP address as seen by other nodes on the network.
