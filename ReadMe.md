@@ -36,10 +36,7 @@ Instances of bfclient.py communicate with each other over UDP, each using a data
   The actual protocol messages are dictionaries named "send_dict" throughout this program. They are comprised of the following types:
 
   (a) update
-      This message's ``'type'` key maps to the string `'update'`.
-      The message's `'routing_table'` key maps to a routing table identical in structure to locally stored tables.
-      When it's first sent: to neighbors upon initialization, as well as at periodic intervals by a timer thread.
-      It's the table updates in this message that are used by the Bellman-Ford algorithm. The periodic updates allow the algorithm to converge.
+   -This message's ``'type'` key maps to the string `'update'`. The message's `'routing_table'` key maps to a routing table identical in structure to locally stored tables. When it's first sent: to neighbors upon initialization, as well as at periodic intervals by a timer thread. It's the table updates in this message that are used by the Bellman-Ford algorithm. The periodic updates allow the algorithm to converge.
 
   (b) linkup
   - The linkup message's `'type'` key is the string `'linkup'`. The `'pair'` key maps to another string in the format of `"node_id,node_id"` where node_id is a string with structure described in part (1). When it's first sent: upon a `'LINKUP'` command from stdin. These are used to restore a previously offline link between two nodes.
