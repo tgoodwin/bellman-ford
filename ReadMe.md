@@ -35,45 +35,45 @@ Instances of bfclient.py communicate with each other over UDP, each using a data
 
   The actual protocol messages are dictionaries named "send_dict" throughout this program. They are comprised of the following types:
 
-  (a) update
+*update*
    -This message's ``'type'` key maps to the string `'update'`. The message's `'routing_table'` key maps to a routing table identical in structure to locally stored tables. When it's first sent: to neighbors upon initialization, as well as at periodic intervals by a timer thread. It's the table updates in this message that are used by the Bellman-Ford algorithm. The periodic updates allow the algorithm to converge.
 
-  (b) linkup
+*linkup*
   - The linkup message's `'type'` key is the string `'linkup'`. The `'pair'` key maps to another string in the format of `"node_id,node_id"` where node_id is a string with structure described in part (1). When it's first sent: upon a `'LINKUP'` command from stdin. These are used to restore a previously offline link between two nodes.
 
-  (c) linkdown
+*linkdown*
   - The linkdown message's `'type'` key is the string `'linkdown'`. The `'pair'` key maps to a string in the same formatting as the `'linkup'` messsage. When it's first sent: upon a `'LINKDOWN'` command from stdin. Used to take down a link between two adjacent nodes (the edge cost is set to infinity).
 
-  (d) close
+*close*
   - The close message's `'type'` key is the string `'close'`. The message has a `'target'` key which maps to a `node_id` representing the node that is going offline. When it's first sent: by the `node_timer` thread after discovering that a given neighbor has been inactive for more than 3 times the timeout interval.
 
 ###3. Description of threads used
 
-  (a) timer_update thread
+*timer_update thread*
   - Used to send periodic distance-vector updates to neighbors at an interval specified by the user input.
 
-  (b) node_timer thread
+*node_timer thread*
   - Runs every second to check for nodes that have "expired" and should then be considered offline. This thread sends messages of 'close' type.
 
   - Thread methods use deepcopy to ensure that a dictionary they are iterating through doesn't change size during iteration.
 
 ###4. Peculiarities in this implementation with respect to the assignment:
 
-  (a) **_[IMPORTANT]_**
-      Since this program does not take a host ip address on the command line, I use
-      `host = socket.gethostbyname(socket.gethostname())`
-      to store an ip address for the host. This is what ultimately determines the node's `self_id` string.
-      This program works under the assumption that the above function call returns the same IP address as seen by other nodes on the network.
-      If nodes do not seem to be responding, try a topology on the same machine/IP address.
-      A node's conception of its own IP address will be displayed at the top of the routing table via the SHOWRT command.
-      This IP address must be identical to this node's IP address as displayed in any different node's routing table for all other nodes in the topology.
+**_[IMPORTANT]_**
+Since this program does not take a host ip address on the command line, I use
+`host = socket.gethostbyname(socket.gethostname())`
+to store an ip address for the host. This is what ultimately determines the node's `self_id` string.
+This program works under the assumption that the above function call returns the same IP address as seen by other nodes on the network.
+If nodes do not seem to be responding, try a topology on the same machine/IP address.
+A node's conception of its own IP address will be displayed at the top of the routing table via the SHOWRT command.
+This IP address must be identical to this node's IP address as displayed in any different node's routing table for all other nodes in the topology.
 
-  I only use one UDP socket per bfclient instance. The assignment calls for a 'read only socket' and a 'set of sockets' to 'write to', but since UDP sockets are connectionless, there is no need for each neighbor to have an individual socket. Rather, messages are sent to neighbors iteratively through a single socket.
+- I only use one UDP socket per bfclient instance. The assignment calls for a 'read only socket' and a 'set of sockets' to 'write to', but since UDP sockets are connectionless, there is no need for each neighbor to have an individual socket. Rather, messages are sent to neighbors iteratively through a single socket.
 
-  I do not store node identifiers as actual tuple objects, but rather as    strings that are separated by a ":". This decision decision was made to simplify the use of JSON for inter-node communication, as well as to reflect the way the assignment specifies to represent nodes in the routing table.
+- I do not store node identifiers as actual tuple objects, but rather as    strings that are separated by a ":". This decision decision was made to simplify the use of JSON for inter-node communication, as well as to reflect the way the assignment specifies to represent nodes in the routing table.
 
-  When a node is unreachable, i.e. its edge cost is infinity, the 'link' parameter of the routing table is represented as the string `"n/a"`.
+- When a node is unreachable, i.e. its edge cost is infinity, the 'link' parameter of the routing table is represented as the string `"n/a"`.
 
-  I have implemented Poisoned Reverse in the `update_neighbor()` method.
+- I have implemented __Poisoned Reverse__ in the `update_neighbor()` method.
 
-  I have also implemented a TWEET command that broadcasts a message to all other reachable nodes in the network. Just in case you need to tweet. Just type "TWEET" onto the command line followed by your text content.
+- I have also implemented a `TWEET` command that broadcasts a message to all other reachable nodes in the network. Just in case you need to tweet. Just type "TWEET" onto the command line followed by your text content.
