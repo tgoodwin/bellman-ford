@@ -1,7 +1,8 @@
 #Distributed Bellman-Ford
 #####Timothy Goodwin,  December 2015
 
-######A distributed network routing algorithm implemented here in Python for optimal path calculations. Fully responsive to dynamic network configurations. Embraces the <i>essence of scalability</i>. Instances of bfclient.py communicate with each other over UDP, each using a single datagram socket.
+######A distributed network routing algorithm implemented here in Python for optimal path calculations. Fully responsive to dynamic network configurations. Embraces the <i>essence of scalability</i> :)
+Instances of bfclient.py communicate with each other over UDP, each using a single datagram socket.
 
 ###1. Description of data formats, internal data structures used by each node
 
