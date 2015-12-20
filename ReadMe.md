@@ -1,9 +1,7 @@
 #Bellman-Ford
 #####Timothy Goodwin,  December 2015
 
-######A distributed, dynamic network routing algorithm implemented here in Python for truly scalable optimal-path computations.
-
-Instances of bfclient.py communicate with each other over UDP, each using a datagram socket bound to a user specified port.
+######A distributed, dynamic network routing algorithm implemented here in Python for truly scalable optimal-path computations. Instances of bfclient.py communicate with each other over UDP, each using a single datagram socket.
 
 >When constructing the network topology via command line input, ensure that the IP address input for any given node is the same as what would be retuned by `socket.gethostbyname(socket.gethostname())` on that node's machine. This function call can be system dependent. See point 4(a) below for details.
 
