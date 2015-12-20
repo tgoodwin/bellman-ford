@@ -1,4 +1,5 @@
 #Distributed Bellman-Ford
+######Timothy Goodwin in  December 2015
 
 Instances of bfclient.py communicate with each other over UDP, each using a datagram socket bound to a user specified port.
 
@@ -11,28 +12,22 @@ Instances of bfclient.py communicate with each other over UDP, each using a data
 
   `self_id` is a node_id string with the host and port the bfclient instance is running on.
 
-  `neighbors = {}`
-  - maps neighbor nodes to the neighbor node's routing table
+  `neighbors = {}` maps neighbor nodes to the neighbor node's routing table
 
-  `routing_table = {}`
-  - maps node_id to each node_id's respective dictionary.
+  `routing_table = {}` maps node_id to each node_id's respective dictionary.
 
   `routing_table[node_id]`
-  - Each node dictionary value holds 2 keys, 'cost' and 'link'.
-    The 'cost' key maps to a float type, which represents a positive edge weight.
-    The 'link' key maps to a node_id which represents the "first hop" node taken by the host node to reach the node_id destination.
+  Each node dictionary value holds 2 keys, 'cost' and 'link'.
+  The 'cost' key maps to a float type, which represents a positive edge weight.
+  The 'link' key maps to a node_id which represents the "first hop" node taken by the host node to reach the node_id destination.
 
-  `adjacent_links = {}`
-  - maps neighbor_id to edge cost for every link in topography
+  `adjacent_links = {}` maps neighbor_id to edge cost for every link in topography
 
-  `old_links = {}`
-  - maps previously active neighbor nodes to their link costs
+  `old_links = {}` maps previously active neighbor nodes to their link costs
 
-  `active_hist = {}`
-  - maps a neighbor's node_id to the last time activity was received from that  neighbor. This is used by the node_timer thread.
+  `active_hist = {}` maps a neighbor's node_id to the last time activity was received from that  neighbor. This is used by the node_timer thread.
 
-  `dead_links = []`
-  - node pairs for link taken offline by either node in the pair.
+  `dead_links = []` node pairs for link taken offline by either node in the pair.
 
 ###2. Description of inter-node messages and protocol structure
 
@@ -85,12 +80,12 @@ Instances of bfclient.py communicate with each other over UDP, each using a data
       A node's conception of its own IP address will be displayed at the top of the routing table via the SHOWRT command.
       This IP address must be identical to this node's IP address as displayed in any different node's routing table for all other nodes in the topology.
 
-  ..* I only use one UDP socket per bfclient instance. The assignment calls for a 'read only socket' and a 'set of sockets' to 'write to', but since UDP sockets are connectionless, there is no need for each neighbor to have an individual socket. Rather, messages are sent to neighbors iteratively through a single socket.
+  I only use one UDP socket per bfclient instance. The assignment calls for a 'read only socket' and a 'set of sockets' to 'write to', but since UDP sockets are connectionless, there is no need for each neighbor to have an individual socket. Rather, messages are sent to neighbors iteratively through a single socket.
 
-  ..* I do not store node identifiers as actual tuple objects, but rather as    strings that are separated by a ":". This decision decision was made to simplify the use of JSON for inter-node communication, as well as to reflect the way the assignment specifies to represent nodes in the routing table.
+  I do not store node identifiers as actual tuple objects, but rather as    strings that are separated by a ":". This decision decision was made to simplify the use of JSON for inter-node communication, as well as to reflect the way the assignment specifies to represent nodes in the routing table.
 
-  ..* When a node is unreachable, i.e. its edge cost is infinity, the 'link' parameter of the routing table is represented as the string `"n/a"`.
+  When a node is unreachable, i.e. its edge cost is infinity, the 'link' parameter of the routing table is represented as the string `"n/a"`.
 
-  ..* I have implemented Poisoned Reverse in the `update_neighbor()` method.
+  I have implemented Poisoned Reverse in the `update_neighbor()` method.
 
-  ..* I have also implemented a TWEET command that broadcasts a message to all other reachable nodes in the network. Just in case you need to tweet. Just type "TWEET" onto the command line followed by your text content.
+  I have also implemented a TWEET command that broadcasts a message to all other reachable nodes in the network. Just in case you need to tweet. Just type "TWEET" onto the command line followed by your text content.
