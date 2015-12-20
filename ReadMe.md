@@ -35,25 +35,25 @@ Instances of bfclient.py communicate with each other over UDP, each using a data
 
   The actual protocol messages are dictionaries named "send_dict" throughout this program. They are comprised of the following types:
 
-*update*
-   -This message's ``'type'` key maps to the string `'update'`. The message's `'routing_table'` key maps to a routing table identical in structure to locally stored tables. When it's first sent: to neighbors upon initialization, as well as at periodic intervals by a timer thread. It's the table updates in this message that are used by the Bellman-Ford algorithm. The periodic updates allow the algorithm to converge.
+_update_
+   - This message's ``'type'` key maps to the string `'update'`. The message's `'routing_table'` key maps to a routing table identical in structure to locally stored tables. When it's first sent: to neighbors upon initialization, as well as at periodic intervals by a timer thread. It's the table updates in this message that are used by the Bellman-Ford algorithm. The periodic updates allow the algorithm to converge.
 
-*linkup*
+_linkup_
   - The linkup message's `'type'` key is the string `'linkup'`. The `'pair'` key maps to another string in the format of `"node_id,node_id"` where node_id is a string with structure described in part (1). When it's first sent: upon a `'LINKUP'` command from stdin. These are used to restore a previously offline link between two nodes.
 
-*linkdown*
+_linkdown_
   - The linkdown message's `'type'` key is the string `'linkdown'`. The `'pair'` key maps to a string in the same formatting as the `'linkup'` messsage. When it's first sent: upon a `'LINKDOWN'` command from stdin. Used to take down a link between two adjacent nodes (the edge cost is set to infinity).
 
-*close*
+_close_
   - The close message's `'type'` key is the string `'close'`. The message has a `'target'` key which maps to a `node_id` representing the node that is going offline. When it's first sent: by the `node_timer` thread after discovering that a given neighbor has been inactive for more than 3 times the timeout interval.
 
 ###3. Description of threads used
 
-*timer_update thread*
-  - Used to send periodic distance-vector updates to neighbors at an interval specified by the user input.
+_timer update thread_
+  - `timer_update` sed to send periodic distance-vector updates to neighbors at an interval specified by the user input.
 
-*node_timer thread*
-  - Runs every second to check for nodes that have "expired" and should then be considered offline. This thread sends messages of 'close' type.
+_node timer thread_
+  - `node_timer` runs every second to check for nodes that have "expired" and should then be considered offline. This thread sends messages of 'close' type.
 
   - Thread methods use deepcopy to ensure that a dictionary they are iterating through doesn't change size during iteration.
 
