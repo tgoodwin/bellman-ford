@@ -46,7 +46,7 @@ _linkdown_
 _close_
   - The close message's `'type'` key is the string `'close'`. The message has a `'target'` key which maps to a `node_id` representing the node that is going offline. When it's first sent: by the `node_timer` thread after discovering that a given neighbor has been inactive for more than 3 times the timeout interval.
 
-###3. Description of threads used
+### 3. Description of threads used
 
 _timer update thread_
   - `timer_update` sed to send periodic distance-vector updates to neighbors at an interval specified by the user input.
