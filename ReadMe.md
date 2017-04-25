@@ -1,4 +1,4 @@
-#Distributed Bellman-Ford
+# Bellman-Ford
 ##### Timothy Goodwin,  December 2015
 
 ###### A distributed network routing algorithm implemented here in Python for optimal path calculations. Fully responsive to dynamic network configurations. Embraces the <i>essence of scalability</i> :)
