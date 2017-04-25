@@ -1,6 +1,4 @@
 README.txt by Tim Goodwin
-Programming Assignment 3
-December 19, 2015
 
 bfclient.py implements Bellman-Ford algorithm.
 Instances of bfclient.py communicate with each other over UDP, each using a datagram socket bound to a user specified port.
