@@ -1,10 +1,10 @@
 #Distributed Bellman-Ford
-#####Timothy Goodwin,  December 2015
+##### Timothy Goodwin,  December 2015
 
-######A distributed network routing algorithm implemented here in Python for optimal path calculations. Fully responsive to dynamic network configurations. Embraces the <i>essence of scalability</i> :)
+###### A distributed network routing algorithm implemented here in Python for optimal path calculations. Fully responsive to dynamic network configurations. Embraces the <i>essence of scalability</i> :)
 Instances of bfclient.py communicate with each other over UDP, each using a single datagram socket.
 
-###1. Description of data formats, internal data structures used by each node
+### 1. Description of data formats, internal data structures used by each node
 
   Nodes are uniquely identified by a <ip_addr, port> tuple. This program represents these node identifiers, named 'node_id', as a string with the following format:
   `<ip_adress>:<port>`
@@ -28,7 +28,7 @@ Instances of bfclient.py communicate with each other over UDP, each using a sing
 
   `dead_links = []` node pairs for link taken offline by either node in the pair.
 
-###2. Description of inter-node messages and protocol structure
+### 2. Description of inter-node messages and protocol structure
 
   The bfclient nodes communicate by sending JSON formatted strings over UDP. Each message is initially sent by one node to all its neighbors. The neighbors transmit this message to their set of neighbors and thus throughout the network.
 
@@ -56,7 +56,7 @@ _node timer thread_
 
   - Thread methods use deepcopy to ensure that a dictionary they are iterating through doesn't change size during iteration.
 
-###4. Peculiarities in this implementation with respect to the assignment:
+### 4. Peculiarities in this implementation with respect to the assignment:
 
 **_[IMPORTANT]_**
 >Since this program does not take a host ip address on the command line, I use
